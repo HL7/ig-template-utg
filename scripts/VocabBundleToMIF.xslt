@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:fn="http://hl7.org" xmlns:saxon="http://saxon.sf.net/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:f="http://hl7.org/fhir" xmlns="urn:hl7-org:v3/mif2" xpath-default-namespace="http://hl7.org/fhir" exclude-result-prefixes="fn saxon xs f">
 	<xsl:output method="xml" version="1.0" encoding="UTF-8" indent="yes"/>
-	<xsl:param name="version"/>
+	<xsl:param name="version" select="'2020-01-01'"/>
 	<xsl:variable name="versionDate" select="substring-after($version, '-')"/>
-	<xsl:variable name="bindingDate" select="concat(substring($versionDate, 1, 4), '-', substring($versionDate, 5, 2), '-', substring($versionDate, 7, 2))"/>
 	<xsl:key name="resourceByUrl" match="/Bundle/entry" use="fullUrl/@value"/>
 	<xsl:variable name="toolVersion" select="0.1"/>
 	<xsl:variable name="conceptDomainSystemUrl" select="'http://terminology.hl7.org/CodeSystem/conceptdomains'"/>
@@ -44,6 +43,13 @@
                 <xsl:copy-of select="fn:markdownToHTML(definition/@value, true())"/>
               </text>
             </definition>
+            <xsl:for-each select="property[code/@value='HL7usageNotes']">
+              <usageNotes>
+                <text>
+                  <xsl:value-of select="valueString/@value"/>
+                </text>
+              </usageNotes>
+            </xsl:for-each>
           </documentation>
           <xsl:variable name="appInfo" as="element()*">
             <xsl:for-each select="property[code/@value='openIssue']">
@@ -76,13 +82,16 @@
         <xsl:for-each select="parent::concept">
           <specializesDomain name="{code/@value}"/>
         </xsl:for-each>
-        <xsl:for-each select="property[not(code/@value=('source', 'deprecationInfo', 'openIssue') or starts-with(code/@value, 'contextBinding'))]">
+        <xsl:for-each select="property[not(code/@value=('source', 'deprecationInfo', 'openIssue', 'HL7usageNotes') or starts-with(code/@value, 'contextBinding'))]">
           <property name="{code/@value}">
             <xsl:for-each select="valueCode">
               <xsl:attribute name="value" select="@value"/>
             </xsl:for-each>
             <xsl:for-each select="valueCoding">
               <xsl:attribute name="value" select="concat(substring-after(system/@value, 'http://terminology.hl7.org/CodeSystem/v3-'), '.', code/@value)"/>
+            </xsl:for-each>
+            <xsl:for-each select="valueString">
+              <xsl:attribute name="value" select="@value"/>
             </xsl:for-each>
           </property>
         </xsl:for-each>
@@ -93,7 +102,7 @@
     <xsl:for-each select="key('resourceByUrl', 'http://terminology.hl7.org/List/v3-Publishing')/resource/List/entry">
       <!-- Todo: yank this 'if' and collapse for-each loops once source is fixed -->
       <xsl:choose>
-        <xsl:when test="not(preceding-sibling::entry[item/reference/@value=current()/item/reference/@value])">-->
+        <xsl:when test="not(preceding-sibling::entry[item/reference/@value=current()/item/reference/@value])">
           <xsl:for-each select="item/reference">
             <xsl:variable name="url" select="if (contains(@value, '|')) then substring-before(@value, '|') else @value"/>
             <xsl:choose>
@@ -125,8 +134,33 @@
                           <description>Inverse of Specializes.  Only included as a derived relationship.</description>
                         </supportedConceptRelationship>
                       </xsl:if>
-                      <xsl:for-each select="property[extension[@url='http://hl7.org/fhir/StructureDefinition/codesystem-relationshipKind']]">
-                        <supportedConceptRelationship relationshipKind="{extension[@url='http://hl7.org/fhir/StructureDefinition/codesystem-relationshipKind']/valueCode/@value}" name="{code/@value}">
+                      <xsl:for-each select="property[extension[@url='http://terminology.hl7.org/StructureDefinition/ext-mif-relationship-relationshipKind']]">
+                        <xsl:variable name="name">
+                          <xsl:choose>
+                            <xsl:when test="starts-with(code/@value, 'rim-')">
+                              <xsl:value-of select="substring-after(code/@value, 'rim-')"/>
+                            </xsl:when>
+                            <xsl:otherwise>
+                              <xsl:value-of select="code/@value"/>
+                            </xsl:otherwise>
+                          </xsl:choose>
+                        </xsl:variable>
+                        <supportedConceptRelationship relationshipKind="{extension[@url='http://terminology.hl7.org/StructureDefinition/ext-mif-relationship-relationshipKind']/valueCode/@value}" name="{$name}">
+                          <xsl:for-each select="extension[@url='http://terminology.hl7.org/StructureDefinition/ext-mif-relationship-relationshipInverseName']/valueString/@value">
+                            <xsl:attribute name="inverseName" select="."/>
+                          </xsl:for-each>
+                          <xsl:for-each select="extension[@url='http://terminology.hl7.org/StructureDefinition/ext-mif-relationship-isNavigable']/valueBoolean/@value">
+                            <xsl:attribute name="isNavigable" select="."/>
+                          </xsl:for-each>
+                          <xsl:for-each select="extension[@url='http://terminology.hl7.org/StructureDefinition/ext-mif-relationship-reflexivity']/valueCode/@value">
+                            <xsl:attribute name="reflexivity" select="."/>
+                          </xsl:for-each>
+                          <xsl:for-each select="extension[@url='http://terminology.hl7.org/StructureDefinition/ext-mif-relationship-symmetry']/valueCode/@value">
+                            <xsl:attribute name="symmetry" select="."/>
+                          </xsl:for-each>
+                          <xsl:for-each select="extension[@url='http://terminology.hl7.org/StructureDefinition/ext-mif-relationship-transitivity']/valueCode/@value">
+                            <xsl:attribute name="transitivity" select="."/>
+                          </xsl:for-each>
                           <xsl:for-each select="description">
                             <description>
                               <xsl:copy-of select="fn:markdownToHTML(@value, false())"/>
@@ -134,7 +168,7 @@
                           </xsl:for-each>
                         </supportedConceptRelationship>
                       </xsl:for-each>
-                      <xsl:for-each select="property[not(extension[@url='http://hl7.org/fhir/StructureDefinition/codesystem-relationshipKind'] or code/@value=('isMandatory','notSelectable'))]">
+                      <xsl:for-each select="property[not(extension[@url='http://terminology.hl7.org/StructureDefinition/ext-mif-relationship-relationshipKind'] or code/@value=('isMandatory','notSelectable','HL7usageNotes','subsumedBy'))]">
                         <xsl:variable name="type">
                           <xsl:choose>
                             <xsl:when test="type/@value='code'">Token</xsl:when>
@@ -166,15 +200,24 @@
                                 <xsl:attribute name="isSelectable" select="'false'"/>
                               </xsl:for-each>
                               <xsl:variable name="annotations" as="element()*">
-                                <xsl:for-each select="definition">
+                                <xsl:if test="definition|property[code/@value='HL7usageNotes']">
                                   <documentation>
-                                    <definition>
-                                      <text>
-                                        <xsl:copy-of select="fn:markdownToHTML(@value, true())"/>
-                                      </text>
-                                    </definition>
+                                    <xsl:for-each select="definition">
+                                      <definition>
+                                        <text>
+                                          <xsl:copy-of select="fn:markdownToHTML(@value, true())"/>
+                                        </text>
+                                      </definition>
+                                    </xsl:for-each>
+                                    <xsl:for-each select="property[code/@value='HL7usageNotes']">
+                                      <usageNotes>
+                                        <text>
+                                          <xsl:value-of select="valueString/@value"/>
+                                        </text>
+                                      </usageNotes>
+                                    </xsl:for-each>
                                   </documentation>
-                                </xsl:for-each>
+                                </xsl:if>
                                 <xsl:variable name="appInfo" as="element()*">
                                   <xsl:call-template name="doDeprecation"/>
                                   <!-- Todo: drop the codesystem-openIssue extension -->
@@ -208,7 +251,17 @@
                                 </conceptRelationship>
                               </xsl:for-each>
                               <xsl:for-each select="property[valueCoding]">
-                                <conceptRelationship relationshipName="{code/@value}">
+                                <xsl:variable name="name">
+                                  <xsl:choose>
+                                    <xsl:when test="starts-with(code/@value, 'rim-')">
+                                      <xsl:value-of select="substring-after(code/@value, 'rim-')"/>
+                                    </xsl:when>
+                                    <xsl:otherwise>
+                                      <xsl:value-of select="code/@value"/>
+                                    </xsl:otherwise>
+                                  </xsl:choose>
+                                </xsl:variable>
+                                <conceptRelationship relationshipName="{$name}">
                                   <xsl:for-each select="valueCoding">
                                     <targetConcept code="{code/@value}">
                                       <xsl:if test="system/@value!=ancestor::CodeSystem/url/@value">
@@ -219,7 +272,7 @@
                                 </conceptRelationship>
                               </xsl:for-each>
               <!--                <xsl:for-each select="property[not(valueCoding or code/@value='notSelectable' or (code/@value='status' and valueCode/@value!='retired') or (valueCode/@value='retired' and preceding-sibling::property[valueCode/@value='retired']))]">-->
-                              <xsl:for-each select="property[not(valueCoding or code/@value=('notSelectable', 'subsumedBy', 'synonymCode') or (code/@value='status' and string-length(valueCode/@value)!=1))]">
+                              <xsl:for-each select="property[not(valueCoding or code/@value=('notSelectable', 'subsumedBy', 'synonymCode', 'HL7usageNotes') or (code/@value='status' and string-length(valueCode/@value)!=1))]">
                                 <conceptProperty name="{code/@value}" value="{*[starts-with(local-name(.), 'value')]/@value}"/>
                               </xsl:for-each>
                               <xsl:for-each select="display">
@@ -266,8 +319,18 @@
               </xsl:when>
               <xsl:otherwise>
                 <xsl:for-each select="/Bundle/entry/resource/NamingSystem[uniqueId[type/@value='uri' and preferred/@value='true' and value/@value=$url]]">
-  
-                  <codeSystem name="{substring-after(id/@value, 'v3-')}" title="{title/@value}" codeSystemId="{uniqueId[type/@value='oid' and preferred/@value='true']/value/@value}">
+                  <xsl:variable name="title">
+                    <xsl:choose>
+                      <xsl:when test="title">
+                        <xsl:value-of select="title/@value"/>
+                      </xsl:when>
+                      <xsl:when test="extension[@url='http://terminology.hl7.org/StructureDefinition/ext-namingsystem-title']">
+                        <xsl:value-of select="extension[@url='http://terminology.hl7.org/StructureDefinition/ext-namingsystem-title']/valueString/@value"/>
+                      </xsl:when>
+                      <xsl:otherwise>foo</xsl:otherwise>
+                    </xsl:choose>
+                  </xsl:variable>
+                  <codeSystem name="{substring-after(id/@value, 'v3-')}" title="{$title}" codeSystemId="{uniqueId[type/@value='oid' and preferred/@value='true']/value/@value}">
                     <xsl:if test="description/@value">
                       <annotations>
                         <documentation>
@@ -495,12 +558,14 @@
     </xsl:for-each>
   </xsl:template>
 	<xsl:template name="doContextBindings">
-    <xsl:for-each select="key('resourceByUrl', $conceptDomainSystemUrl)/resource/CodeSystem//concept[property[code/@value='source']/valueCode/@value='v3']/property[starts-with(code/@value, 'contextBinding')]">
+    <xsl:for-each select="key('resourceByUrl', $conceptDomainSystemUrl)/resource/CodeSystem//concept[property[code/@value='source']/valueCode/@value='v3']/property[starts-with(code/@value, 'contextBinding') and ends-with(code/@value, '-valueSet')]">
       <xsl:sort select="parent::code/@value"/>
       <xsl:variable name="realm" select="substring-after(substring-before(code/@value, '-valueSet'), 'contextBinding')"/>
-      <xsl:variable name="strength" select="extension[@url='http://hl7.org/fhir/StructureDefinition/resource-concept-binding-strength']/valueCode/@value"/>
+      <xsl:variable name="realm" select="$realm"/>
+      <xsl:variable name="strength" select="parent::*/property[code/@value=concat('contextBinding', $realm, '-strength')]/valueCode/@value"/>
       <xsl:variable name="valueSet" select="valueString/@value"/>
       <xsl:variable name="domain" select="parent::concept/code/@value"/>
+      <xsl:variable name="bindingDate" select="parent::*/property[code/@value=concat('contextBinding', $realm, '-effectiveDate')]/valueDateTime/@value"/>
       <contextBinding bindingRealmName="{$realm}" valueSet="{$valueSet}" codingStrength="{$strength}" conceptDomain="{$domain}" effectiveDate="{$bindingDate}"/>
     </xsl:for-each>
 	</xsl:template>
