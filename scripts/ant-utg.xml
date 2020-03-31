@@ -25,7 +25,7 @@
     <property name="file.vocabFiles" value="${ig.template}/vocabFiles.xml"/>
     <property name="file.vocabBundle" value="${ig.template}/vocabBundle.xml"/>
     <property name="dir.scripts" value="${ig.template}/scripts"/>
-    <property name="name.mif" value="template/content/DEFN=UV=VO=${igVersion}.coremif"/>
+    <property name="name.mif" value="temp/pages/DEFN=UV=VO=${igVersion}.coremif"/>
     <property name="file.mif" value="${ig.root}/${name.mif}"/>
     <path id="saxon.path">
       <fileset dir="${ig.template}/scripts">
@@ -56,12 +56,12 @@
       <arg line="-xsl:${dir.scripts}/VocabBundleToMIF.xslt -s:${file.vocabBundle} -o:${file.mif}"/>
     </java>
 
-<!--    <fileset id="onGenerate.mif.id" dir="${ig.root}">
+    <fileset id="onGenerate.mif.id" dir="${ig.root}">
       <include name="${name.mif}"/>
     </fileset>
     <property name="onGenerate.mif.file" refid="onGenerate.mif.id"/>
     <appendArtifacts2 files="${onGenerate.mif.file}"/>
-<echo message="${onGenerate.files}"/>-->
+<echo message="${onGenerate.files}"/>
   </target>
   <scriptdef name="appendArtifacts2" language="javascript" description="Adds additional values to the to the onGenerate.files list">
     <attribute name="files"/>
