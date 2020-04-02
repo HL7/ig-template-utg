@@ -4,6 +4,13 @@
   <tstamp/>
   <property name="version" value="9999-${DSTAMP}"/>
   <property name="saxon.classname" value="net.sf.saxon.TransformerFactoryImpl"/>
+  <!-- Skip the QA stuff because it's checking for content related to artifacts.html and UTG doesn't use that -->
+  <target name="onGenerate.igQa">
+    <echo message="...skipped"/>
+  </target>
+  <target name="onGenerate.artifactList">
+    <echo message="...skipped"/>
+  </target>
   <!-- Skip the Jira stuff because this IG doesn't allow Jira submission of defects -->
   <target name="onGenerate.jira.setup">
     <echo message="...skipped"/>
