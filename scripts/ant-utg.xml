@@ -9,6 +9,7 @@
     <echo message="...skipped"/>
   </target>
   <target name="onGenerate.artifactList">
+    <property name="onGenerate.files" value=""/>
     <echo message="...skipped"/>
   </target>
   <!-- Skip the Jira stuff because this IG doesn't allow Jira submission of defects -->
