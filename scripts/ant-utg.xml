@@ -8,10 +8,10 @@
   <target name="onGenerate.igQa">
     <echo message="...skipped"/>
   </target>
-  <target name="onGenerate.artifactList">
+<!--  <target name="onGenerate.artifactList">
     <property name="onGenerate.files" value=""/>
     <echo message="...skipped"/>
-  </target>
+  </target>-->
   <!-- Skip the Jira stuff because this IG doesn't allow Jira submission of defects -->
   <target name="onGenerate.jira.setup">
     <echo message="...skipped"/>
