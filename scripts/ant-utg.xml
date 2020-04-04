@@ -5,7 +5,7 @@
   <property name="version" value="9999-${DSTAMP}"/>
   <property name="saxon.classname" value="net.sf.saxon.TransformerFactoryImpl"/>
   <!-- Skip the QA stuff because it's checking for content related to artifacts.html and UTG doesn't use that -->
-  <target name="onGenerate.igQa">
+  <target name="onGenerate.igQa" depends="onGenerate.processIg">
     <echo message="...skipped"/>
   </target>
 <!--  <target name="onGenerate.artifactList">
