@@ -4,6 +4,8 @@
 	<xsl:param name="version" select="'2020-01-01'"/>
 	<xsl:variable name="versionDate" select="substring-after($version, '-')"/>
 	<xsl:key name="resourceByUrl" match="/Bundle/entry" use="fullUrl/@value"/>
+	<xsl:key name="resourceByRef" match="/Bundle/entry" use="concat(local-name(resource/*),'/', resource/*/id/@value)"/>
+	<xsl:key name="provenanceByUrl" match="/Bundle/entry/resource/Bundle/entry/resource/Provenance" use="target/reference/@value"/>
 	<xsl:variable name="toolVersion" select="0.1"/>
 	<xsl:variable name="conceptDomainSystemUrl" select="'http://terminology.hl7.org/CodeSystem/conceptdomains'"/>
 	<xsl:variable name="urls" as="element(url)+">
@@ -29,74 +31,102 @@
 	<xsl:template name="doConceptDomains">
     <xsl:for-each select="key('resourceByUrl', $conceptDomainSystemUrl)/resource/CodeSystem//concept[property[code/@value='source']/valueCode/@value='v3']">
       <xsl:sort select="code/@value"/>
-      <conceptDomain name="{code/@value}">
-        <!-- Not bothering with the following.  Only exists in one place and the fact it's deprecated is in the definition.
-         <historyItem dateTime="2012-03-15" id="00000000-0000-0000-0000-000000000000"
+      <xsl:apply-templates mode="doDomain" select="."/>
+      <xsl:for-each select="property[code/@value='synonymCode']">
+        <xsl:apply-templates mode="doDomain" select="parent::*">
+          <xsl:with-param name="domain" select="valueCode/@code"/>
+        </xsl:apply-templates>
+      </xsl:for-each>
+    </xsl:for-each>
+	</xsl:template>
+	<xsl:template mode="doDomain" match="concept">
+    <xsl:param name="domain" select="code/@value"/>
+    <conceptDomain name="{$domain}">
+      <!-- No support for this, as we can only track history across all concept domains, not at the level of each domain
+        <historyItem dateTime="2012-03-15" id="00000000-0000-0000-0000-000000000000"
                      isSubstantiveChange="true"
                      isBackwardCompatibleChange="false">
            <description>retiredAsOfRelease: 1130-20120315 Indicates that the Concet Domain was retired from any further use as of the release indicated.</description>
-        </historyItem>-->
-        <annotations>
-          <documentation>
-            <definition>
+        </historyItem>
+      -->
+      <annotations>
+        <documentation>
+          <definition>
+            <text>
+              <xsl:copy-of select="fn:markdownToHTML(definition/@value, true())"/>
+            </text>
+          </definition>
+          <xsl:for-each select="property[code/@value='HL7usageNotes']">
+            <usageNotes>
               <text>
-                <xsl:copy-of select="fn:markdownToHTML(definition/@value, true())"/>
+                <xsl:value-of select="valueString/@value"/>
               </text>
-            </definition>
-            <xsl:for-each select="property[code/@value='HL7usageNotes']">
-              <usageNotes>
-                <text>
-                  <xsl:value-of select="valueString/@value"/>
-                </text>
-              </usageNotes>
-            </xsl:for-each>
-          </documentation>
-          <xsl:variable name="appInfo" as="element()*">
-            <xsl:for-each select="property[code/@value='openIssue']">
-              <openIssue>
-                <text>
-                  <xsl:copy-of select="fn:markdownToHTML(valueString/@value, true())"/>
-                </text>
-              </openIssue>
-            </xsl:for-each>
-<!--            <xsl:if test="property[code/@value='deprecationInfo']">
-              <deprecationInfo deprecationEffectiveVersion="{property[code/@value='deprecationEffectiveVersion']/valueString/@value}">
-                <text>
-                  <xsl:copy-of select="fn:markdownToHTML(property[code/@value='deprecationInfo']/valueString/@value, true())"/>
-                </text>
-              </deprecationInfo>
-            </xsl:if>-->
-          </xsl:variable>
-          <xsl:if test="count($appInfo)!=0">
-            <appInfo>
-              <xsl:copy-of select="$appInfo"/>
-          <!--TODO:
-            <deprecationInfo deprecationEffectiveVersion="1221-20130726">
+            </usageNotes>
+          </xsl:for-each>
+        </documentation>
+        <xsl:variable name="appInfo" as="element()*">
+          <xsl:for-each select="property[code/@value='openIssue']">
+            <openIssue>
               <text>
-                <xsl:copy-of select="fn:markdownToHTML(definition/@value, true())"/>
+                <xsl:copy-of select="fn:markdownToHTML(valueString/@value, true())"/>
               </text>
-            </deprecationInfo>-->
-            </appInfo>
+            </openIssue>
+          </xsl:for-each>
+          <xsl:if test="property[code/@value='DeprecationInfo']">
+            <xsl:variable name="deprecationInfo" select="property[code/@value='DeprecationInfo']/valueString/@value"/>
+            <xsl:variable name="text">
+              <xsl:choose>
+                <xsl:when test="contains($deprecationInfo, 'coremifText=')">
+                  <xsl:value-of select="substring-after($deprecationInfo, 'coremifText=')"/>
+                </xsl:when>
+                <xsl:otherwise>
+                  <xsl:value-of select="$deprecationInfo"/>
+                </xsl:otherwise>
+              </xsl:choose>
+            </xsl:variable>
+            <xsl:variable name="version">
+              <xsl:choose>
+                <xsl:when test="contains($deprecationInfo, 'deprecationEffectiveVersion=')">
+                  <xsl:value-of select="substring-before(substring-after($deprecationInfo, 'deprecationEffectiveVersion='), ' ')"/>
+                </xsl:when>
+                <xsl:otherwise>
+                  <xsl:value-of select="f:occurredPeriod/f:end/@value"/>
+                </xsl:otherwise>
+              </xsl:choose>
+            </xsl:variable>
+            <deprecationInfo deprecationEffectiveVersion="{$version}">
+              <text>
+                <xsl:copy-of select="fn:markdownToHTML($text, true())"/>
+              </text>
+            </deprecationInfo>
           </xsl:if>
-        </annotations>
-        <xsl:for-each select="parent::concept">
-          <specializesDomain name="{code/@value}"/>
-        </xsl:for-each>
-        <xsl:for-each select="property[not(code/@value=('source', 'deprecationInfo', 'openIssue', 'HL7usageNotes') or starts-with(code/@value, 'contextBinding'))]">
-          <property name="{code/@value}">
-            <xsl:for-each select="valueCode">
-              <xsl:attribute name="value" select="@value"/>
-            </xsl:for-each>
-            <xsl:for-each select="valueCoding">
-              <xsl:attribute name="value" select="concat(substring-after(system/@value, 'http://terminology.hl7.org/CodeSystem/v3-'), '.', code/@value)"/>
-            </xsl:for-each>
-            <xsl:for-each select="valueString">
-              <xsl:attribute name="value" select="@value"/>
-            </xsl:for-each>
-          </property>
-        </xsl:for-each>
-      </conceptDomain>
-    </xsl:for-each>
+        </xsl:variable>
+        <xsl:if test="count($appInfo)!=0">
+          <appInfo>
+            <xsl:copy-of select="$appInfo"/>
+          </appInfo>
+        </xsl:if>
+      </annotations>
+      <xsl:for-each select="parent::concept">
+        <specializesDomain name="{code/@value}"/>
+      </xsl:for-each>
+      <xsl:for-each select="property[code/@value='subsumedBy']">
+        <specializesDomain name="{valueCode/@value}"/>
+      </xsl:for-each>
+      <xsl:for-each select="property[not(code/@value=('source', 'deprecationInfo', 'openIssue', 'HL7usageNotes', 'subsumedBy', 'synonymCode') or starts-with(code/@value, 'contextBinding'))]">
+        <property name="{code/@value}">
+          <xsl:for-each select="valueCode">
+            <xsl:attribute name="value" select="@value"/>
+          </xsl:for-each>
+          <xsl:for-each select="valueCoding">
+            <xsl:attribute name="value" select="concat(substring-after(system/@value, 'http://terminology.hl7.org/CodeSystem/v3-'), '.', code/@value)"/>
+          </xsl:for-each>
+          <xsl:for-each select="valueString">
+            <xsl:attribute name="value" select="@value"/>
+          </xsl:for-each>
+        </property>
+      </xsl:for-each>
+    </conceptDomain>
 	</xsl:template>
   <xsl:template name="doCodeSystems">
     <xsl:for-each select="key('resourceByUrl', 'http://terminology.hl7.org/List/v3-Publishing')/resource/List/entry">
@@ -104,13 +134,13 @@
       <xsl:choose>
         <xsl:when test="not(preceding-sibling::entry[item/reference/@value=current()/item/reference/@value])">
           <xsl:for-each select="item/reference">
-            <xsl:variable name="url" select="if (contains(@value, '|')) then substring-before(@value, '|') else @value"/>
+            <xsl:variable name="ref" select="@value"/>
             <xsl:choose>
               <xsl:when test="parent::item/type/@value='CodeSystem'">
-                <xsl:for-each select="key('resourceByUrl', $url)/resource/CodeSystem">
+                <xsl:for-each select="key('resourceByRef', $ref)/resource/CodeSystem">
                   <codeSystem name="{substring(id/@value, 4,1)}{substring(name/@value,2,300)}" title="{title/@value}" codeSystemId="{fn:getOID(.)}">
                     <xsl:call-template name="doHeaderElements"/>
-                    <releasedVersion releaseDate="{date/@value}" completeCodesIndicator="{if (content/@value='complete') then 'true' else 'false'}">
+                    <releasedVersion releaseDate="{substring(date/@value,1,10)}" completeCodesIndicator="{if (content/@value='complete') then 'true' else 'false'}">
                       <!-- TODO: Figure out if these extensions are coming back
                       <xsl:for-each select="extension[@url='http://hl7.org/fhir/StructureDefinition/hl7-maintained-indicator']/valueBoolean/@value">
                         <xsl:attribute name="hl7MaintainedIndicator" select="."/>
@@ -146,7 +176,7 @@
                           </xsl:choose>
                         </xsl:variable>
                         <supportedConceptRelationship relationshipKind="{extension[@url='http://terminology.hl7.org/StructureDefinition/ext-mif-relationship-relationshipKind']/valueCode/@value}" name="{$name}">
-                          <xsl:for-each select="extension[@url='http://terminology.hl7.org/StructureDefinition/ext-mif-relationship-relationshipInverseName']/valueString/@value">
+                          <xsl:for-each select="extension[@url='http://terminology.hl7.org/StructureDefinition/ext-mif-relationship-inverseName']/valueString/@value">
                             <xsl:attribute name="inverseName" select="."/>
                           </xsl:for-each>
                           <xsl:for-each select="extension[@url='http://terminology.hl7.org/StructureDefinition/ext-mif-relationship-isNavigable']/valueBoolean/@value">
@@ -168,7 +198,8 @@
                           </xsl:for-each>
                         </supportedConceptRelationship>
                       </xsl:for-each>
-                      <xsl:for-each select="property[not(extension[@url='http://terminology.hl7.org/StructureDefinition/ext-mif-relationship-relationshipKind'] or code/@value=('isMandatory','notSelectable','HL7usageNotes','subsumedBy'))]">
+                      <xsl:for-each select="property[not(extension[@url='http://terminology.hl7.org/StructureDefinition/ext-mif-relationship-relationshipKind'] or code/@value=('isMandatory','notSelectable','HL7usageNotes','subsumedBy','deprecationDate'))]">
+                      <!-- NOTE: Need to handle deprecationDate stuff -->
                         <xsl:variable name="type">
                           <xsl:choose>
                             <xsl:when test="type/@value='code'">Token</xsl:when>
@@ -179,11 +210,11 @@
                             </xsl:otherwise>
                           </xsl:choose>
                         </xsl:variable>
-                        <xsl:variable name="mandatory" select="extension[@url='http://hl7.org/fhir/StructureDefinition/codesystem-mif-extended-properties']/extension[@url='isMandatory']/valueBoolean/@value"/>
-                        <supportedConceptProperty propertyName="{code/@value}" type="{$type}" isMandatoryIndicator="{if ($mandatory!='') then $mandatory else 'false'}">
+                        <supportedConceptProperty propertyName="{code/@value}" type="{$type}" isMandatoryIndicator="false">
+                          <!-- Support for this was dropped
                           <xsl:for-each select="extension[@url='http://hl7.org/fhir/StructureDefinition/codesystem-mif-extended-properties']/extension[not(@url='isMandatory')]">
                             <xsl:attribute name="{@url}" select="*[starts-with(local-name(.), 'value')]/@value"/>
-                          </xsl:for-each>
+                          </xsl:for-each>-->
                           <xsl:for-each select="description">
                             <description>
                               <xsl:copy-of select="fn:markdownToHTML(@value, false())"/>
@@ -221,6 +252,7 @@
                                 <xsl:variable name="appInfo" as="element()*">
                                   <xsl:call-template name="doDeprecation"/>
                                   <!-- Todo: drop the codesystem-openIssue extension -->
+                                  <!-- Dropped support for this
                                   <xsl:for-each select="extension[@url=('http://hl7.org/fhir/StructureDefinition/resource-openIssue','http://hl7.org/fhir/StructureDefinition/codesystem-openIssue')]/valueString">
                                     <openIssue>
                                       <text>
@@ -228,6 +260,7 @@
                                       </text>
                                     </openIssue>
                                   </xsl:for-each>
+-->
                                 </xsl:variable>
                                 <xsl:if test="count($appInfo)!=0">
                                   <appInfo>
@@ -288,6 +321,8 @@
                                       <xsl:choose>
                                         <xsl:when test="property[code/@value='status']/valueCode/@value='A'">active</xsl:when>
                                         <xsl:when test="property[code/@value='status']/valueCode/@value=('D', 'R', 'B', 'N')">retired</xsl:when>
+                                        <xsl:when test="property[code/@value='status']/valueCode/@value=('deprecated', 'inactive')">active</xsl:when>
+                                        <!-- Todo - figure out what to do about 'inactive' -->
                                         <xsl:otherwise>
                                           <xsl:value-of select="property[code/@value='status']/valueCode/@value"/>
                                         </xsl:otherwise>
@@ -318,7 +353,8 @@
                 </xsl:for-each>
               </xsl:when>
               <xsl:otherwise>
-                <xsl:for-each select="/Bundle/entry/resource/NamingSystem[uniqueId[type/@value='uri' and preferred/@value='true' and value/@value=$url]]">
+                <xsl:for-each select="key('resourceByRef', $ref)/resource/NamingSystem">
+<!--                <xsl:for-each select="/Bundle/entry/resource/NamingSystem[uniqueId[type/@value='uri' and preferred/@value='true' and value/@value=$url]]">-->
                   <xsl:variable name="title">
                     <xsl:choose>
                       <xsl:when test="title">
@@ -368,44 +404,47 @@
     </xsl:element>
   </xsl:template>
   <xsl:template name="doHeaderElements">
-    <xsl:for-each select="extension[@url='http://hl7.org/fhir/StructureDefinition/resource-history']">
-      <historyItem dateTime="{extension[@url='date']/valueDateTime/@value}">
-        <xsl:for-each select="extension[@url='id']/valueString">
-          <xsl:attribute name="id" select="@value"/>
-        </xsl:for-each>
-        <xsl:for-each select="extension[@url=('substantive','substantiative')]/valueBoolean">
-          <xsl:attribute name="isSubstantiveChange" select="@value"/>
-        </xsl:for-each>
-        <xsl:for-each select="extension[@url='backwardCompatible']/valueBoolean">
-          <xsl:attribute name="isBackwardCompatibleChange" select="@value"/>
-        </xsl:for-each>
-        <xsl:for-each select="extension[@url='author']/valueString">
-          <xsl:attribute name="responsiblePersonName" select="@value"/>
-        </xsl:for-each>
-        <xsl:for-each select="extension[@url=('notes', 'annotation')]/valueString">
+    <!-- lloyd todo - use provenance stuff -->
+    <xsl:for-each select="key('provenanceByUrl', f:url/@value)">
+      <xsl:if test="not(f:activity/f:coding[f:system/@value='http://terminology.hl7.org/CodeSystem/v3-DataOperation']/f:code/@value='DEPRECATE')">
+        <historyItem dateTime="{f:occurredPeriod/f:end/@value}" id="{f:id/@value}">
+          <!-- Not supported
+          <xsl:for-each select="extension[@url=('substantive','substantiative')]/valueBoolean">
+            <xsl:attribute name="isSubstantiveChange" select="@value"/>
+          </xsl:for-each>
+          <xsl:for-each select="extension[@url='backwardCompatible']/valueBoolean">
+            <xsl:attribute name="isBackwardCompatibleChange" select="@value"/>
+          </xsl:for-each>
+          -->
+          <xsl:for-each select="f:agent[f:type[f:coding[f:system/@value='http://terminology.hl7.org/CodeSystem/provenance-participant-type' and f:code/@value='author']]][1]/f:who/f:display">
+            <xsl:attribute name="responsiblePersonName" select="@value"/>
+          </xsl:for-each>
           <description>
-            <xsl:value-of select="@value"/>
+            <xsl:value-of select="concat(f:activity/f:coding[f:system/@value='http://terminology.hl7.org/CodeSystem/v3-DataOperation']/f:code/@value, ': ')"/>
+            <xsl:value-of select="fn:markdownToHTML(reason/f:text/@value, true())"/>
           </description>
-        </xsl:for-each>
-      </historyItem>
+        </historyItem>
+      </xsl:if>
     </xsl:for-each>
     <xsl:variable name="headerElements" as="element()*">
       <xsl:variable name="legaleseElements" as="element()*">
+        <!-- Not supported
         <xsl:for-each select="extension[@url='http://hl7.org/fhir/StructureDefinition/codesystem-legalese']/valueString/@value">
           <notation>
             <xsl:value-of select="."/>
-          </notation>
-        </xsl:for-each>
+          </notation>-
+        </xsl:for-each>-->
         <xsl:for-each select="copyright/@value">
           <licenseTerms>
             <xsl:value-of select="."/>
           </licenseTerms>
         </xsl:for-each>
+        <!-- Not supported
         <xsl:for-each select="extension[@url='http://hl7.org/fhir/StructureDefinition/codesystem-versioning']/valueString/@value">
           <versioningPolicy>
             <xsl:value-of select="."/>
           </versioningPolicy>
-        </xsl:for-each>
+        </xsl:for-each>-->
       </xsl:variable>
       <xsl:if test="count($legaleseElements)!=0">
         <legalese>
@@ -413,8 +452,9 @@
         </legalese>
       </xsl:if>
       <xsl:for-each select="publisher/@value">
-        <responsibleGroup organizationName="{.}"/>
+        <responsibleGroup organizationName="{substring(., 1, 80)}"/>
       </xsl:for-each>
+      <!-- Not supported
       <xsl:for-each select="extension[@url='http://hl7.org/fhir/StructureDefinition/codesystem-contributor']">
         <contributor>
           <xsl:for-each select="extension[@url='role']/valueString/@value">
@@ -432,6 +472,7 @@
           </xsl:for-each>
         </contributor>
       </xsl:for-each>
+      -->
     </xsl:variable>
     <xsl:if test="count($headerElements)!=0">
       <header>
@@ -464,19 +505,16 @@
     </xsl:if>
   </xsl:template>
   <xsl:template name="doDeprecation">
-    <xsl:if test="extension[@url=('http://hl7.org/fhir/StructureDefinition/resource-deprecationInfo','http://hl7.org/fhir/StructureDefinition/resource-versionDeprecated')]/valueString">
-      <deprecationInfo>
-        <xsl:for-each select="extension[@url='http://hl7.org/fhir/StructureDefinition/resource-versionDeprecated']/valueString">
-          <xsl:attribute name="deprecationEffectiveVersion" select="@value"/>
-        </xsl:for-each>
-        <text>
-          <xsl:for-each select="extension[@url='http://hl7.org/fhir/StructureDefinition/resource-deprecationInfo']/valueString">
-            <xsl:copy-of select="fn:markdownToHTML(@value, true())"/>
-          </xsl:for-each>
-          <xsl:if test="not(extension[@url='http://hl7.org/fhir/StructureDefinition/resource-deprecationInfo']/valueString)">This element was deprecated as of the release indicated.</xsl:if>
-        </text>
-      </deprecationInfo>
-    </xsl:if>
+    <!-- Lloyd todo -->
+    <xsl:for-each select="key('provenanceByUrl', f:url/@value)">
+      <xsl:if test="f:activity/f:coding[f:system/@value='http://terminology.hl7.org/CodeSystem/v3-DataOperation']/f:code/@value='DEPRECATE'">
+        <deprecationInfo deprecationEffectiveVersion="{f:occurredPeriod/f:end/@value}">
+          <text>
+            <xsl:value-of select="fn:markdownToHTML(reason/f:text/@value, true())"/>
+          </text>
+        </deprecationInfo>
+      </xsl:if>
+    </xsl:for-each>
   </xsl:template>
   <xsl:template name="doValueSets">
     <xsl:for-each select="key('resourceByUrl', 'http://terminology.hl7.org/List/v3-Publishing')/resource/List/entry/item/reference">
@@ -501,6 +539,7 @@
                 <xsl:value-of select="@value"/>
               </supportedLanguage>
             </xsl:for-each>
+            <!-- lloyd TODO: Get this to work once rim-assoc-conc-property property actually exists -->
             <xsl:for-each select="extension[@url='http://hl7.org/fhir/StructureDefinition/valueset-hl7-assocConceptProp']">
               <associatedConceptProperty name="{extension[@url='name']/valueString/@value}" value="{extension[@url='value']/valueString/@value}"/>
             </xsl:for-each>
