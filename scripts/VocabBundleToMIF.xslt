@@ -404,7 +404,6 @@
     </xsl:element>
   </xsl:template>
   <xsl:template name="doHeaderElements">
-    <!-- lloyd todo - use provenance stuff -->
     <xsl:for-each select="key('provenanceByUrl', f:url/@value)">
       <xsl:if test="not(f:activity/f:coding[f:system/@value='http://terminology.hl7.org/CodeSystem/v3-DataOperation']/f:code/@value='DEPRECATE')">
         <historyItem dateTime="{f:occurredPeriod/f:end/@value}" id="{f:id/@value}">
@@ -505,7 +504,6 @@
     </xsl:if>
   </xsl:template>
   <xsl:template name="doDeprecation">
-    <!-- Lloyd todo -->
     <xsl:for-each select="key('provenanceByUrl', f:url/@value)">
       <xsl:if test="f:activity/f:coding[f:system/@value='http://terminology.hl7.org/CodeSystem/v3-DataOperation']/f:code/@value='DEPRECATE'">
         <deprecationInfo deprecationEffectiveVersion="{f:occurredPeriod/f:end/@value}">
