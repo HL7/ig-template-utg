@@ -33,14 +33,20 @@
       <xsl:sort select="code/@value"/>
       <xsl:apply-templates mode="doDomain" select="."/>
       <xsl:for-each select="property[code/@value='synonymCode']">
+<xsl:if test="normalize-space(valueCode/@value)=''">
+<xsl:message terminate="yes" select="."/>
+</xsl:if>
         <xsl:apply-templates mode="doDomain" select="parent::*">
-          <xsl:with-param name="domain" select="valueCode/@code"/>
+          <xsl:with-param name="domain" select="valueCode/@value"/>
         </xsl:apply-templates>
       </xsl:for-each>
     </xsl:for-each>
 	</xsl:template>
 	<xsl:template mode="doDomain" match="concept">
     <xsl:param name="domain" select="code/@value"/>
+<xsl:if test="normalize-space($domain)=''">
+<xsl:message terminate="yes" select="."/>
+</xsl:if>
     <conceptDomain name="{$domain}">
       <!-- No support for this, as we can only track history across all concept domains, not at the level of each domain
         <historyItem dateTime="2012-03-15" id="00000000-0000-0000-0000-000000000000"
@@ -113,7 +119,7 @@
       <xsl:for-each select="property[code/@value='subsumedBy']">
         <specializesDomain name="{valueCode/@value}"/>
       </xsl:for-each>
-      <xsl:for-each select="property[not(code/@value=('source', 'deprecationInfo', 'openIssue', 'HL7usageNotes', 'subsumedBy', 'synonymCode') or starts-with(code/@value, 'contextBinding'))]">
+      <xsl:for-each select="property[not(code/@value=('source', 'deprecationInfo', 'openIssue', 'HL7usageNotes', 'subsumedBy', 'synonymCode', 'deprecated', 'status', 'DeprecationInfo') or starts-with(code/@value, 'contextBinding'))]">
         <property name="{code/@value}">
           <xsl:for-each select="valueCode">
             <xsl:attribute name="value" select="@value"/>
