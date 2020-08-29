@@ -517,7 +517,7 @@
   <xsl:template name="doValueSets">
     <xsl:for-each select="key('resourceByUrl', 'http://terminology.hl7.org/List/v3-Publishing')/resource/List/entry/item/reference">
       <xsl:variable name="url" select="if (contains(@value, '|')) then substring-before(@value, '|') else @value"/>
-      <xsl:for-each select="key('resourceByUrl', $url)/resource/ValueSet">
+      <xsl:for-each select="key('resourceByRef', $url)/resource/ValueSet">
         <valueSet name="{title/@value}" id="{fn:getOID(.)}">
           <xsl:if test="immutable/@value='true'">
             <xsl:attribute name="isImmutable">true</xsl:attribute>
@@ -537,8 +537,7 @@
                 <xsl:value-of select="@value"/>
               </supportedLanguage>
             </xsl:for-each>
-            <!-- lloyd TODO: Get this to work once rim-assoc-conc-property property actually exists -->
-            <xsl:for-each select="extension[@url='http://hl7.org/fhir/StructureDefinition/valueset-hl7-assocConceptProp']">
+            <xsl:for-each select="extension[@url='http://terminology.hl7.org/StructureDefinition/ext-mif-assocConceptProp']">
               <associatedConceptProperty name="{extension[@url='name']/valueString/@value}" value="{extension[@url='value']/valueString/@value}"/>
             </xsl:for-each>
             <xsl:for-each select="compose">
@@ -637,7 +636,9 @@
     <url xmlns="http://hl7.org/fhir" value="{url/@value}" oid="{fn:getOID(.)}"/>
   </xsl:template>
   <xsl:template mode="url" match="NamingSystem">
-    <url xmlns="http://hl7.org/fhir" value="{uniqueId[preferred/@value='true' and type/@value='uri']/value/@value}" oid="{uniqueId[preferred/@value='true' and type/@value='oid']/value/@value}"/>
+    <xsl:for-each select="uniqueId[type/@value='uri']">
+      <url xmlns="http://hl7.org/fhir" value="{value/@value}" oid="{parent::NamingSystem/uniqueId[preferred/@value='true' and type/@value='oid']/value/@value}"/>
+    </xsl:for-each>
   </xsl:template>
 	<xsl:function name="fn:urlToOID">
     <xsl:param name="url"/>
