@@ -144,7 +144,7 @@
             <xsl:choose>
               <xsl:when test="parent::item/type/@value='CodeSystem'">
                 <xsl:for-each select="key('resourceByRef', $ref)/resource/CodeSystem">
-                  <codeSystem name="{substring(id/@value, 4,1)}{substring(name/@value,2,300)}" title="{title/@value}" codeSystemId="{fn:getOID(.)}">
+                  <codeSystem name="{upper-case(substring(name/@value, 1,1))}{substring(name/@value,2,300)}" title="{title/@value}" codeSystemId="{fn:getOID(.)}">
                     <xsl:call-template name="doHeaderElements"/>
                     <releasedVersion releaseDate="{substring(date/@value,1,10)}" completeCodesIndicator="{if (content/@value='complete') then 'true' else 'false'}">
                       <!-- TODO: Figure out if these extensions are coming back
