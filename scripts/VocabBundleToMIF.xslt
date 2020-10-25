@@ -162,14 +162,14 @@
                         </supportedLanguage>
                       </xsl:for-each>
                       <!-- Todo: fix this once the extension is back -->
-                      <xsl:if test="true() or extension[@url='http://hl7.org/fhir/StructureDefinition/hl7-approved-indicator']/valueString/@value='true'">
+ <!--                     <xsl:if test="true() or extension[@url='http://hl7.org/fhir/StructureDefinition/hl7-approved-indicator']/valueString/@value='true'">
                         <supportedConceptRelationship relationshipKind="Specializes" name="Specializes" inverseName="Generalizes" isNavigable="true" reflexivity="irreflexive" symmetry="antisymmetric" transitivity="transitive">
                           <description>The child code is a more narrow version of the concept represented by the parent code.  I.e. Every child concept is also a valid parent concept.  Used to allow determination of subsumption.  Must be transitive, irreflexive, antisymmetric.</description>
                         </supportedConceptRelationship>
                         <supportedConceptRelationship relationshipKind="Generalizes" name="Generalizes" inverseName="Specializes" isNavigable="true" reflexivity="irreflexive" symmetry="antisymmetric" transitivity="transitive">
                           <description>Inverse of Specializes.  Only included as a derived relationship.</description>
                         </supportedConceptRelationship>
-                      </xsl:if>
+                      </xsl:if>-->
                       <xsl:for-each select="property[extension[@url='http://terminology.hl7.org/StructureDefinition/ext-mif-relationship-relationshipKind']]">
                         <xsl:variable name="name">
                           <xsl:choose>
