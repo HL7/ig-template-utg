@@ -649,6 +649,10 @@ Todo: Need to figure out how to handle code systems with an unbounded number of 
               <xs:selector xpath="mif:concept/mif:code"/>
               <xs:field xpath="@code"/>
             </xs:unique>
+            <xs:key name="RelasedVersionSupportedConceptProperty">
+              <xs:selector xpath="mif:supportedConceptProperty"/>
+              <xs:field xpath="@propertyName"/>
+            </xs:key>
             <xs:key name="ReleasedVersionSupportedConceptRelationship">
               <xs:selector xpath="mif:supportedConceptRelationship"/>
               <xs:field xpath="@name"/>
@@ -1770,12 +1774,20 @@ Todo: Need to figure out how to handle code systems with an unbounded number of 
               <xs:documentation>Defines the codes from a given code system allowed as part of the value set version</xs:documentation>
               <xs:documentation>UML: Identifies what EnumerationItems should be imported into this Package</xs:documentation>
             </xs:annotation>
+            <xs:unique name="contentCodeBasedContentUnique">
+              <xs:selector xpath="mif:codeBasedContent"/>
+              <xs:field xpath="@code"/>
+            </xs:unique>
           </xs:element>
           <xs:element name="nonSelectableContent" type="ContentDefinition" minOccurs="0">
             <xs:annotation>
               <xs:documentation>If present, overrides the default "selectable" characteristic of the codes defined by 'content' such that all codes are selectable with the exception of those found within this value-set.</xs:documentation>
               <xs:documentation>UML: Tag on stereotype</xs:documentation>
             </xs:annotation>
+            <xs:unique name="nonSelectableContentCodeBasedContentUnique">
+              <xs:selector xpath="mif:codeBasedContent"/>
+              <xs:field xpath="@code"/>
+            </xs:unique>
           </xs:element>
           <!-- Todo: Need to add some ability to define sort orders for navigation of codes, particularly when drawn from multiple code systems -->
           <!--          <xs:element name="constrainedCodeDisplays" type="ConstrainedCodeDisplay" minOccurs="0" maxOccurs="unbounded">
@@ -1982,18 +1994,30 @@ Todo: Need to figure out how to handle code systems with an unbounded number of 
           <xs:documentation>Identifies that the referenced content definitions are all considered to be part of this content definition</xs:documentation>
           <xs:documentation>UML: Part of complex tag</xs:documentation>
         </xs:annotation>
+        <xs:unique name="unionWithContentCodeBasedContentUnique">
+          <xs:selector xpath="mif:codeBasedContent"/>
+          <xs:field xpath="@code"/>
+        </xs:unique>
       </xs:element>
       <xs:element name="intersectionWithContent" type="ContentDefinition" minOccurs="0" maxOccurs="unbounded">
         <xs:annotation>
           <xs:documentation>Indicates that the overall content definition should be considered to be the combination of all "unioned" value sets intersected with each of the 'intersection with' content definitions</xs:documentation>
           <xs:documentation>UML: Part of complex tag</xs:documentation>
         </xs:annotation>
+        <xs:unique name="intersectionWithContentCodeBasedContentUnique">
+          <xs:selector xpath="mif:codeBasedContent"/>
+          <xs:field xpath="@code"/>
+        </xs:unique>
       </xs:element>
       <xs:element name="excludeContent" type="ContentDefinition" minOccurs="0" maxOccurs="unbounded">
         <xs:annotation>
           <xs:documentation>Identifies codes that should be removed from the set of codes resulting from the previous unions and intersections</xs:documentation>
           <xs:documentation>UML: Part of complex tag</xs:documentation>
         </xs:annotation>
+        <xs:unique name="excludeContentCodeBasedContentUnique">
+          <xs:selector xpath="mif:codeBasedContent"/>
+          <xs:field xpath="@code"/>
+        </xs:unique>
       </xs:element>
     </xs:sequence>
     <!-- Has to contain at least one of includes, excludes and unionOf -->
@@ -2137,6 +2161,10 @@ Todo: Need to figure out how to handle code systems with an unbounded number of 
           <xs:documentation>Identifies the list of codes where at least one of the codes must exist for the relationship to be true.  If not specified, then the valueset is considered unbounded.  I.e. The relationship may exist for any code.</xs:documentation>
           <xs:documentation>UML: Defines a set of code enumerations at the end of the dependency</xs:documentation>
         </xs:annotation>
+        <xs:unique name="targetConceptsCodeBasedContentUnique">
+          <xs:selector xpath="mif:codeBasedContent"/>
+          <xs:field xpath="@code"/>
+        </xs:unique>
       </xs:element>
     </xs:sequence>
     <xs:attribute name="relationshipName" type="BasicFormalName" use="required">

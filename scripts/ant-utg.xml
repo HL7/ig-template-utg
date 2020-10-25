@@ -32,6 +32,7 @@
     <property name="file.validator" value="${ig.root}/input-cache/org.hl7.fhir.validator.jar"/>
     <property name="file.vocabFiles" value="${ig.template}/vocabFiles.xml"/>
     <property name="file.vocabBundle" value="${ig.template}/vocabBundle.xml"/>
+    <property name="file.vocabBundle" value="${ig.template}/mifQA.xml"/>
     <property name="dir.scripts" value="${ig.template}/scripts"/>
     <property name="name.mif" value="temp/pages/DEFN=UV=VO=${igVersion}.coremif"/>
     <property name="file.mif" value="${ig.root}/${name.mif}"/>
@@ -67,6 +68,9 @@
     <schemavalidate file="${file.mif}">
       <schema namespace="urn:hl7-org:v3/mif2" file="${dir.scripts}/mif-model-vocabulary.xsd"/>
     </schemavalidate>
+    <java jar="${dir.scripts}/saxon9.jar" fork="true" failonerror="true">
+      <arg line="-xsl:${dir.scripts}/mifQA.xslt -s:${file.mif} -o:${file.mifQa}"/>
+    </java>
     <fileset id="onGenerate.mif.id" dir="${ig.root}">
       <include name="${name.mif}"/>
     </fileset>
