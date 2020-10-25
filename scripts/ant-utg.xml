@@ -65,7 +65,7 @@
       <arg line="-xsl:${dir.scripts}/VocabBundleToMIF.xslt -s:${file.vocabBundle} -o:${file.mif}"/>
     </java>
     <schemavalidate file="${file.mif}">
-      <schema namespace="urn:hl7-org:v3/mif2" file="${dir.scripts}/mif-schema/mif-model-vocabulary.xsd"/>
+      <schema namespace="urn:hl7-org:v3/mif2" file="${dir.scripts}/mif-model-vocabulary.xsd"/>
     </schemavalidate>
     <fileset id="onGenerate.mif.id" dir="${ig.root}">
       <include name="${name.mif}"/>
