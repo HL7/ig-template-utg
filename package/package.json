@@ -1,6 +1,5 @@
-{
+﻿{
   "name": "hl7.utg.template",
-  "version": "0.0.1",
   "type": "fhir.template",
   "license": "CC0-1.0",
   "description": "HL7 UTG Template",
@@ -9,5 +8,6 @@
   "base": "hl7.base.template",
   "dependencies": {
     "hl7.base.template": "current"
-  }
+  },
+  "version": "0.1.0"
 }
