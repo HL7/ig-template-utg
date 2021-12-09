@@ -2,7 +2,7 @@
 <xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:fn="http://hl7.org" xmlns:saxon="http://saxon.sf.net/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:f="http://hl7.org/fhir" xmlns="urn:hl7-org:v3/mif2" xpath-default-namespace="http://hl7.org/fhir" exclude-result-prefixes="fn saxon xs f">
 	<xsl:output method="xml" version="1.0" encoding="UTF-8" indent="yes"/>
 	<xsl:param name="version" select="substring(string(current-dateTime()),1,19)"/>
-	<xsl:variable name="currentDate" select="substring(string(current-dateTime()),1,19)"
+	<xsl:variable name="currentDate" select="substring(string(current-dateTime()),1,19)"/>
 	<xsl:variable name="versionDate" select="substring-after($version, '-')"/>
 	<xsl:key name="resourceByUrl" match="/Bundle/entry" use="fullUrl/@value"/>
 	<xsl:key name="resourceByRef" match="/Bundle/entry" use="concat(local-name(resource/*),'/', resource/*/id/@value)"/>
