@@ -1,3 +1,4 @@
 {
-	"script": "scripts/ant-utg.xml"
+	"script": "scripts/ant-utg.xml",
+	"otherScripts" : []	
 }
