@@ -481,9 +481,9 @@
       -->
     </xsl:variable>
     <xsl:if test="count($headerElements)!=0">
-      <header>
+<!--      <header>
         <xsl:copy-of select="$headerElements"/>
-      </header>
+      </header>-->
     </xsl:if>
     <xsl:variable name="annotations" as="element()*">
       <xsl:for-each select="description">
