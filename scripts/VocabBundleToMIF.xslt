@@ -428,7 +428,9 @@
           </xsl:for-each>
           <description>
             <xsl:value-of select="concat(f:activity/f:coding[f:system/@value='http://terminology.hl7.org/CodeSystem/v3-DataOperation']/f:code/@value, ': ')"/>
-            <xsl:value-of select="fn:markdownToHTML(reason/f:text/@value, true())"/>
+            <xsl:if test="f:reason/f:text/@value">
+              <xsl:value-of select="fn:markdownToHTML(f:reason/f:text/@value, true())"/>
+            </xsl:if>
           </description>
         </historyItem>
       </xsl:if>
