@@ -212,6 +212,7 @@
                             <xsl:when test="type/@value='code'">Token</xsl:when>
                             <xsl:when test="type/@value='boolean'">Boolean</xsl:when>
                             <xsl:when test="type/@value='string'">String</xsl:when>
+							<xsl:when test="type/@value='Coding'">Token</xsl:when>
                             <xsl:otherwise>
                               <xsl:message terminate="yes" select="concat('Unrecognized property type: ', type/@value)"/>
                             </xsl:otherwise>
