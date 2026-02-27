@@ -28,7 +28,7 @@
   <target name="onGenerate.jira">
     <echo message="...skipped"/>
   </target>
-  <target name="onGenerate.mif" extensionOf="onGenerate.extend">
+<!--  <target name="onGenerate.mif" extensionOf="onGenerate.extend">
     <property name="file.validator" value="${ig.root}/input-cache/org.hl7.fhir.validator.jar"/>
     <property name="file.vocabFiles" value="${ig.template}/vocabFiles.xml"/>
     <property name="file.vocabBundle" value="${ig.template}/vocabBundle.xml"/>
@@ -55,12 +55,12 @@
     </concat>
     <xslt in="${file.vocabFiles}" out="${file.vocabBundle}" style="${dir.scripts}/filesToBundle.xslt" classpathref="saxon.path">
       <factory name="${saxon.classname}"/>
-    </xslt>
+    </xslt>-->
 <!--    <xslt in="${file.vocabBundle}" out="${file.mif}" style="${dir.scripts}/VocabBundleToMIF.xslt" classpathref="saxon.path">
       <factory name="${saxon.classname}"/>
       <param name="version" expression="${igVersion}"/>
     </xslt>-->
-    <echo message="-xsl:${dir.scripts}/VocabBundleToMIF.xslt -s:${file.vocabBundle} -o:${file.mif}"/>
+<!--    <echo message="-xsl:${dir.scripts}/VocabBundleToMIF.xslt -s:${file.vocabBundle} -o:${file.mif}"/>
     <java jar="${dir.scripts}/saxon9.jar" fork="true" failonerror="true">
       <jvmarg line="-Dfile.encoding=UTF-8"/>
       <arg line="-xsl:${dir.scripts}/VocabBundleToMIF.xslt -s:${file.vocabBundle} -o:${file.mif}"/>
@@ -77,6 +77,7 @@
     <property name="onGenerate.mif.file" refid="onGenerate.mif.id"/>
     <appendArtifacts2 files="${onGenerate.mif.file}"/>
   </target>
+-->
   <scriptdef name="appendArtifacts2" language="javascript" description="Adds additional values to the to the onGenerate.files list">
     <attribute name="files"/>
     self.project.setProperty("onGenerate.files", self.project.getProperty("onGenerate.files").concat(";").concat(attributes.get("files")));
