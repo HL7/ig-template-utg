@@ -18,6 +18,12 @@
   <target name="onGenerate.jira.skip">
     <echo message="...skipped"/>
   </target>
+  <target name="onGenerate.jira.propose">
+    <echo message="...skipped"/>
+  </target>
+  <target name="onGenerate.jira.skip-invalid">
+    <echo message="...skipped"/>
+  </target>
   <target name="onGenerate.jira">
     <echo message="...skipped"/>
   </target>
